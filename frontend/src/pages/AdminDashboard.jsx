@@ -25,7 +25,7 @@ function AdminDashboard() {
 
   const token = localStorage.getItem('token');
   const api = axios.create({
-    baseURL: 'http://localhost:3001/api',
+    baseURL: 'https://delivery-system-production-6da2.up.railway.app/api',
     headers: { Authorization: `Bearer ${token}` }
   });
 
