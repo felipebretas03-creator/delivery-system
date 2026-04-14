@@ -24,17 +24,22 @@ async function createAdminIfNotExists() {
     where: { email: "admin@admin.com" }
   });
 
-  if (!adminExists) {
-    const hashedPassword = await bcrypt.hash("123456", 10);
+  await prisma.user.deleteMany({
+  where: { email: "admin@admin.com" }
+});
 
-    await prisma.user.create({
-      data: {
-        name: "Admin",
-        email: "admin@admin.com",
-        password: hashedPassword,
-        role: "ADMIN"
-      }
-    });
+const hashedPassword = await bcrypt.hash("123456", 10);
+
+await prisma.user.create({
+  data: {
+    name: "Admin",
+    email: "admin@admin.com",
+    password: hashedPassword,
+    role: "ADMIN"
+  }
+});
+
+console.log("🔥 Admin recriado");
 
     console.log("✅ Admin criado automaticamente");
   } else {
