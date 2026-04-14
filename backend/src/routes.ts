@@ -8,7 +8,7 @@ const router = Router();
 
 // Auth
 router.post('/auth/login', login);
-router.post('/auth/register', registerMotoboy); // Em vez de rota de registro livre, admin poderia criar, mas deixo assim para facilitar.
+router.post('/auth/register', authMiddleware, registerMotoboy); // Protegido apenas para Admin
 
 // Orders
 router.post('/orders', authMiddleware, createOrder);

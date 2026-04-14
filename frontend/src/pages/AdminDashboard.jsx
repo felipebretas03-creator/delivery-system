@@ -8,6 +8,10 @@ function AdminDashboard() {
   const [metrics, setMetrics] = useState({ avgTimeMinutes: 0, totalDelivered: 0 });
   const navigate = useNavigate();
 
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
   // Order Form State
   const [customerName, setCustomerName] = useState('');
   const [address, setAddress] = useState('');
@@ -21,7 +25,7 @@ function AdminDashboard() {
 
   const token = localStorage.getItem('token');
   const api = axios.create({
-    baseURL: 'https://delivery-system-production-6da2.up.railway.app/api',
+    baseURL: 'http://localhost:3001/api',
     headers: { Authorization: `Bearer ${token}` }
   });
 
@@ -64,15 +68,21 @@ function AdminDashboard() {
 
   const handleCreateMotoboy = async (e) => {
     e.preventDefault();
+    setIsCreating(true);
+    setMbMessage('');
     try {
-      await axios.post('https://delivery-system-production-6da2.up.railway.app/api/auth/register', { name: mbName, email: mbEmail, password: mbPassword });
+      await api.post('/auth/register', { name: mbName, email: mbEmail, password: mbPassword });
       setMbMessage('Motoboy criado com sucesso!');
       setMbName(''); setMbEmail(''); setMbPassword('');
-      setTimeout(() => setMbMessage(''), 3000);
       fetchData();
+      setTimeout(() => {
+        setMbMessage('');
+        setIsModalOpen(false);
+      }, 1500);
     } catch (err) {
-      setMbMessage('Erro ao criar: e-mail já existe ou inválido');
-      setTimeout(() => setMbMessage(''), 3000);
+      setMbMessage(err.response?.data?.error || 'Erro ao cadastrar motoboy. Verifique os dados.');
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -83,9 +93,12 @@ function AdminDashboard() {
 
   return (
     <div className="container">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
         <h2>Painel Admin</h2>
-        <button className="btn btn-outline" style={{width: 'auto', padding: '8px 16px'}} onClick={handleLogout}>Sair</button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button className="btn btn-primary" style={{width: 'auto', padding: '8px 16px'}} onClick={() => setIsModalOpen(true)}>+ Cadastrar Motoboy</button>
+          <button className="btn btn-outline" style={{width: 'auto', padding: '8px 16px'}} onClick={handleLogout}>Sair</button>
+        </div>
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '32px' }}>
@@ -112,7 +125,7 @@ function AdminDashboard() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '32px' }}>
         <div className="card">
           <h3>Nova Entrega</h3>
           <form style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '16px' }} onSubmit={handleCreateOrder}>
@@ -125,26 +138,7 @@ function AdminDashboard() {
             <div style={{flex: '1 1 150px'}}>
               <input className="input-group" style={{width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #374151', background: '#111827', color: '#fff'}} required placeholder="Telefone" value={phone} onChange={e => setPhone(e.target.value)} />
             </div>
-            <button className="btn btn-primary" style={{width: '100%', padding: '14px 24px'}}>Criar Pedido</button>
-          </form>
-        </div>
-
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-             <h3>Novo Motoboy</h3>
-             {mbMessage && <span style={{fontSize: '0.9rem', fontWeight: 'bold', color: mbMessage.includes('Erro') ? 'var(--status-red)' : 'var(--status-green)'}}>{mbMessage}</span>}
-          </div>
-          <form style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '16px' }} onSubmit={handleCreateMotoboy}>
-            <div style={{flex: '1 1 200px'}}>
-              <input className="input-group" style={{width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #374151', background: '#111827', color: '#fff'}} required placeholder="Nome do Motoboy" value={mbName} onChange={e => setMbName(e.target.value)} />
-            </div>
-            <div style={{flex: '2 1 200px'}}>
-              <input className="input-group" type="email" style={{width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #374151', background: '#111827', color: '#fff'}} required placeholder="E-mail de Login" value={mbEmail} onChange={e => setMbEmail(e.target.value)} />
-            </div>
-            <div style={{flex: '1 1 150px'}}>
-              <input className="input-group" type="password" style={{width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #374151', background: '#111827', color: '#fff'}} required placeholder="Senha" value={mbPassword} onChange={e => setMbPassword(e.target.value)} />
-            </div>
-            <button className="btn btn-primary" style={{width: '100%', padding: '14px 24px'}}>Cadastrar Motoboy</button>
+            <button className="btn btn-primary" style={{width: 'auto', padding: '14px 24px'}}>Criar Pedido</button>
           </form>
         </div>
       </div>
@@ -196,6 +190,38 @@ function AdminDashboard() {
         })}
         {orders.length === 0 && <p style={{color: 'var(--text-secondary)'}}>Nenhum pedido no sistema.</p>}
       </div>
+    {isModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <button className="modal-close" onClick={() => setIsModalOpen(false)}>&times;</button>
+            <h3 style={{ marginBottom: '16px' }}>Cadastrar Motoboy</h3>
+            
+            {mbMessage && (
+              <div style={{ padding: '12px', marginBottom: '16px', borderRadius: '8px', backgroundColor: mbMessage.includes('Erro') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)', color: mbMessage.includes('Erro') ? 'var(--status-red)' : 'var(--status-green)' }}>
+                {mbMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateMotoboy}>
+              <div className="input-group">
+                <label>Nome Completo</label>
+                <input required type="text" placeholder="Ex: João da Silva" value={mbName} onChange={e => setMbName(e.target.value)} disabled={isCreating} />
+              </div>
+              <div className="input-group">
+                <label>E-mail de Login</label>
+                <input required type="email" placeholder="motoboy@exemplo.com" value={mbEmail} onChange={e => setMbEmail(e.target.value)} disabled={isCreating} />
+              </div>
+              <div className="input-group">
+                <label>Senha</label>
+                <input required type="password" placeholder="Mínimo 6 caracteres" value={mbPassword} onChange={e => setMbPassword(e.target.value)} disabled={isCreating} />
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ marginTop: '24px'}} disabled={isCreating}>
+                {isCreating ? 'Cadastrando...' : 'Finalizar Cadastro'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma';
+import { AuthRequest } from '../middlewares/auth';
 
 const SECRET_KEY = process.env.JWT_SECRET || 'secret-delivery-key';
 
@@ -46,9 +47,25 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const registerMotoboy = async (req: Request, res: Response): Promise<void> => {
+export const registerMotoboy = async (req: AuthRequest, res: Response): Promise<void> => {
    try {
+      if (req.user?.role !== 'ADMIN') {
+         res.status(403).json({ error: 'Apenas administradores podem cadastrar motoboys' });
+         return;
+      }
+
       const { name, email, password } = req.body;
+      if (!name || !email || !password) {
+         res.status(400).json({ error: 'Todos os campos são obrigatórios' });
+         return;
+      }
+
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser) {
+         res.status(409).json({ error: 'E-mail já está em uso' });
+         return;
+      }
+
       const hashed = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({
          data: { name, email, password: hashed, role: 'MOTOBOY' }
