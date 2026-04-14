@@ -11,7 +11,7 @@ function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('https://delivery-system-production-6da2.up.railway.app/auth/login', { email, password });
+      const res = await axios.post('https://delivery-system-production-6da2.up.railway.app/api/auth/login',  { email, password });
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('role', res.data.role);
       localStorage.setItem('name', res.data.name);
