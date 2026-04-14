@@ -5,7 +5,11 @@ import bcrypt from 'bcrypt';
 import { prisma } from './prisma';
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "https://delivery-system-puce.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json());
 app.use('/api', routes);
 
