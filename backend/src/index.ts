@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import routes from './routes';
+import bcrypt from 'bcrypt';
+import { prisma } from './prisma';
 
 const app = express();
 app.use(cors());
@@ -8,6 +10,32 @@ app.use(express.json());
 app.use('/api', routes);
 
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+
+async function createAdminIfNotExists() {
+  const adminExists = await prisma.user.findFirst({
+    where: { email: "admin@admin.com" }
+  });
+
+  if (!adminExists) {
+    const hashedPassword = await bcrypt.hash("123456", 10);
+
+    await prisma.user.create({
+      data: {
+        name: "Admin",
+        email: "admin@admin.com",
+        password: hashedPassword,
+        role: "ADMIN"
+      }
+    });
+
+    console.log("✅ Admin criado automaticamente");
+  } else {
+    console.log("ℹ️ Admin já existe");
+  }
+}
+
+// 🚀 inicia tudo corretamente
+app.listen(PORT, async () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
+  await createAdminIfNotExists();
 });
