@@ -25,3 +25,19 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
     return;
   }
 };
+
+export const requireAdmin = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  if (req.user?.role !== 'ADMIN') {
+    res.status(403).json({ error: 'Acesso negado. Apenas administradores.' });
+    return;
+  }
+  next();
+};
+
+export const requireMotoboy = (req: AuthRequest, res: Response, next: NextFunction): void => {
+  if (req.user?.role !== 'MOTOBOY') {
+    res.status(403).json({ error: 'Acesso negado. Apenas motoboys.' });
+    return;
+  }
+  next();
+};
