@@ -65,7 +65,7 @@ function AdminDashboard() {
   const handleCreateMotoboy = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:3001/api/auth/register', { name: mbName, email: mbEmail, password: mbPassword });
+      await axios.post('https://delivery-system-production-6da2.up.railway.app/api/auth/register', { name: mbName, email: mbEmail, password: mbPassword });
       setMbMessage('Motoboy criado com sucesso!');
       setMbName(''); setMbEmail(''); setMbPassword('');
       setTimeout(() => setMbMessage(''), 3000);
