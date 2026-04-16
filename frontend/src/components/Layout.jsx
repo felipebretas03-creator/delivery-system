@@ -71,7 +71,7 @@ function Layout({ activeTab, setActiveTab, children }) {
           justifyContent: 'flex-end',
           alignItems: 'center',
           padding: '0 32px',
-          borderBottom: '1px solid rgba(0,0,0,0.05)'
+          borderBottom: '1px solid var(--border-color)'
         }}>
           <div style={{ display: 'flex', gap: '16px' }}>
             <button style={{
