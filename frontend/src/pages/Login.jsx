@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 function Login() {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ function Login() {
   try {
     const res = await axios.post(
       'https://delivery-system-production-6da2.up.railway.app/api/auth/login',
-      { email, password }
+      { username, password }
     );
 
     console.log(res.data); // ✅ AQUI SIM
@@ -40,8 +40,8 @@ function Login() {
         {error && <p style={{ color: 'var(--status-red)', textAlign: 'center', marginBottom: '16px' }}>{error}</p>}
         <form onSubmit={handleLogin}>
           <div className="input-group">
-            <label>E-mail</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="Seu email" />
+            <label>Usuário</label>
+            <input type="text" value={username} onChange={e => setUsername(e.target.value)} required placeholder="Nome de usuário" />
           </div>
           <div className="input-group">
             <label>Senha</label>

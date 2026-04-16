@@ -22,7 +22,7 @@ function AdminDashboard() {
 
   // Motoboy Form State
   const [mbName, setMbName] = useState('');
-  const [mbEmail, setMbEmail] = useState('');
+  const [mbUsername, setMbUsername] = useState('');
   const [mbPassword, setMbPassword] = useState('');
   const [mbMessage, setMbMessage] = useState('');
 
@@ -74,9 +74,9 @@ function AdminDashboard() {
     setIsCreating(true);
     setMbMessage('');
     try {
-      await api.post('/auth/register', { name: mbName, email: mbEmail, password: mbPassword });
+      await api.post('/auth/register', { name: mbName, username: mbUsername, password: mbPassword });
       setMbMessage('Motoboy criado com sucesso!');
-      setMbName(''); setMbEmail(''); setMbPassword('');
+      setMbName(''); setMbUsername(''); setMbPassword('');
       fetchData();
       setTimeout(() => {
         setMbMessage('');
@@ -333,8 +333,8 @@ function AdminDashboard() {
                 <input required type="text" placeholder="Ex: João da Silva" value={mbName} onChange={e => setMbName(e.target.value)} disabled={isCreating} />
               </div>
               <div className="input-group">
-                <label>E-mail de Login</label>
-                <input required type="email" placeholder="motoboy@exemplo.com" value={mbEmail} onChange={e => setMbEmail(e.target.value)} disabled={isCreating} />
+                <label>Usuário de Login</label>
+                <input required type="text" placeholder="ex: felipe_motoboy" value={mbUsername} onChange={e => setMbUsername(e.target.value)} disabled={isCreating} />
               </div>
               <div className="input-group">
                 <label>Senha</label>

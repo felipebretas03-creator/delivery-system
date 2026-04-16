@@ -8,18 +8,18 @@ const SECRET_KEY = process.env.JWT_SECRET || 'secret-delivery-key';
 
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
     
     // First setup auto-admin if db empty
     const count = await prisma.user.count();
     if (count === 0) {
        const hashed = await bcrypt.hash('admin', 10);
        await prisma.user.create({
-          data: { name: 'Admin Root', email: 'admin@admin.com', password: hashed, role: 'ADMIN' }
+          data: { name: 'Admin Root', username: 'admin', password: hashed, role: 'ADMIN' }
        });
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { username } });
     if (!user) {
       res.status(401).json({ error: 'Credenciais inválidas' });
       return;
@@ -54,21 +54,21 @@ export const registerMotoboy = async (req: AuthRequest, res: Response): Promise<
          return;
       }
 
-      const { name, email, password } = req.body;
-      if (!name || !email || !password) {
+      const { name, username, password } = req.body;
+      if (!name || !username || !password) {
          res.status(400).json({ error: 'Todos os campos são obrigatórios' });
          return;
       }
 
-      const existingUser = await prisma.user.findUnique({ where: { email } });
+      const existingUser = await prisma.user.findUnique({ where: { username } });
       if (existingUser) {
-         res.status(409).json({ error: 'E-mail já está em uso' });
+         res.status(409).json({ error: 'Usuário já está em uso' });
          return;
       }
 
       const hashed = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({
-         data: { name, email, password: hashed, role: 'MOTOBOY' }
+         data: { name, username, password: hashed, role: 'MOTOBOY' }
       });
       res.json({ message: 'Motoboy registrado com sucesso', id: user.id });
    } catch(error) {
