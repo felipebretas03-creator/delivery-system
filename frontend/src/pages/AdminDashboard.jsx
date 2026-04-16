@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import Layout from '../components/Layout';
 
 function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [orders, setOrders] = useState([]);
   const [motoboys, setMotoboys] = useState([]);
   const [metrics, setMetrics] = useState({ avgTimeMinutes: 0, totalDelivered: 0 });
@@ -80,7 +82,7 @@ function AdminDashboard() {
         setIsModalOpen(false);
       }, 1500);
     } catch (err) {
-      setMbMessage(err.response?.data?.error || 'Erro ao cadastrar motoboy. Verifique os dados.');
+      setMbMessage(err.response?.data?.error || 'Erro ao cadastrar. Verifique os dados.');
     } finally {
       setIsCreating(false);
     }
@@ -91,113 +93,175 @@ function AdminDashboard() {
     navigate('/login');
   };
 
-  return (
-    <div className="container">
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
-        <h2>Painel Admin</h2>
-        <div style={{ display: 'flex', gap: '12px' }}>
-          <button className="btn btn-primary" style={{width: 'auto', padding: '8px 16px'}} onClick={() => setIsModalOpen(true)}>+ Cadastrar Motoboy</button>
-          <button className="btn btn-outline" style={{width: 'auto', padding: '8px 16px'}} onClick={handleLogout}>Sair</button>
-        </div>
-      </header>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-        <div className="card">
-          <h3>Métricas (Hoje)</h3>
-          <p style={{ fontSize: '2rem', color: 'var(--accent-color)', fontWeight: 'bold' }}>{metrics.avgTimeMinutes} min</p>
-          <p>Tempo Médio de Entrega</p>
-          <hr style={{ borderColor: '#374151', margin: '16px 0' }} />
-          <p style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{metrics.totalDelivered}</p>
-          <p>Entregas Concluídas</p>
+  const renderDashboard = () => (
+    <>
+      <h1 className="text-center" style={{marginBottom: '40px'}}>Visão Geral (Hoje)</h1>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', maxWidth: '900px', margin: '0 auto' }}>
+        
+        <div className="card text-center" style={{marginTop: '16px'}}>
+          <div className="card-badge-top">Entregas</div>
+          <p style={{ fontSize: '2.5rem', color: 'var(--text-dark)', fontWeight: 'bold', margin: '16px 0 8px' }}>
+            {metrics.totalDelivered}
+          </p>
+          <p>Concluídas hoje</p>
         </div>
 
-        <div className="card">
-          <h3>Motoboys Ativos ({motoboys.length})</h3>
-          <ul style={{ listStyle: 'none', padding: 0, marginTop: '16px' }}>
-            {motoboys.map(m => (
-              <li key={m.id} style={{ padding: '8px 0', borderBottom: '1px solid #374151', display: 'flex', justifyContent: 'space-between' }}>
-                <span>{m.name}</span>
-                <span className="badge delivered" style={{fontSize: '0.7rem'}}>ONLINE</span>
-              </li>
-            ))}
-            {motoboys.length === 0 && <p style={{color: 'var(--text-secondary)'}}>Nenhum motoboy logado hoje.</p>}
-          </ul>
+        <div className="card text-center" style={{marginTop: '16px'}}>
+          <div className="card-badge-top">Desempenho</div>
+          <p style={{ fontSize: '2.5rem', color: 'var(--text-dark)', fontWeight: 'bold', margin: '16px 0 8px' }}>
+            {metrics.avgTimeMinutes}m
+          </p>
+          <p>Tempo Médio</p>
         </div>
+
+        <div className="card text-center" style={{marginTop: '16px'}}>
+          <div className="card-badge-top">Frota</div>
+          <p style={{ fontSize: '2.5rem', color: 'var(--text-dark)', fontWeight: 'bold', margin: '16px 0 8px' }}>
+            {motoboys.length}
+          </p>
+          <p>Motoboys Online</p>
+        </div>
+
+      </div>
+    </>
+  );
+
+  const renderEntregas = () => (
+    <>
+      <h1 className="text-center" style={{marginBottom: '40px'}}>Gestão de Entregas</h1>
+      
+      <div className="card" style={{ maxWidth: '900px', margin: '0 auto 32px' }}>
+        <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>
+          Nova Entrega
+        </h3>
+        <form style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }} onSubmit={handleCreateOrder}>
+          <div style={{flex: '1 1 200px'}}>
+            <div className="input-group" style={{marginBottom: 0}}>
+              <input required placeholder="Nome do Cliente" value={customerName} onChange={e => setCustomerName(e.target.value)} />
+            </div>
+          </div>
+          <div style={{flex: '2 1 300px'}}>
+            <div className="input-group" style={{marginBottom: 0}}>
+              <input required placeholder="Endereço" value={address} onChange={e => setAddress(e.target.value)} />
+            </div>
+          </div>
+          <div style={{flex: '1 1 150px'}}>
+            <div className="input-group" style={{marginBottom: 0}}>
+              <input required placeholder="Telefone" value={phone} onChange={e => setPhone(e.target.value)} />
+            </div>
+          </div>
+          <button className="btn btn-primary" style={{width: 'auto', padding: '0 24px'}}>Criar</button>
+        </form>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '32px' }}>
-        <div className="card">
-          <h3>Nova Entrega</h3>
-          <form style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '16px' }} onSubmit={handleCreateOrder}>
-            <div style={{flex: '1 1 200px'}}>
-              <input className="input-group" style={{width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #374151', background: '#111827', color: '#fff'}} required placeholder="Nome do Cliente" value={customerName} onChange={e => setCustomerName(e.target.value)} />
-            </div>
-            <div style={{flex: '2 1 300px'}}>
-              <input className="input-group" style={{width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #374151', background: '#111827', color: '#fff'}} required placeholder="Endereço" value={address} onChange={e => setAddress(e.target.value)} />
-            </div>
-            <div style={{flex: '1 1 150px'}}>
-              <input className="input-group" style={{width: '100%', padding: '14px', borderRadius: '12px', border: '1px solid #374151', background: '#111827', color: '#fff'}} required placeholder="Telefone" value={phone} onChange={e => setPhone(e.target.value)} />
-            </div>
-            <button className="btn btn-primary" style={{width: 'auto', padding: '14px 24px'}}>Criar Pedido</button>
-          </form>
-        </div>
-      </div>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <h3 style={{ marginBottom: '16px', color: 'var(--text-dark)' }}>Acompanhamento</h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {orders.map(order => {
+            let badgeClass = "badge pending";
+            if (order.status === 'ACCEPTED') badgeClass = "badge accepted";
+            if (order.status === 'IN_TRANSIT') badgeClass = "badge in_transit";
+            if (order.status === 'DELIVERED') badgeClass = "badge delivered";
+            
+            let minsPassed = null;
+            if (order.status === 'IN_TRANSIT' && order.startedAt) {
+               minsPassed = Math.floor((new Date() - new Date(order.startedAt)) / 60000);
+               if (minsPassed > 20) badgeClass = "badge delayed timer-delayed";
+            }
 
-      <h3>Acompanhamento de Entregas</h3>
-      <div style={{ marginTop: '16px' }}>
-        {orders.map(order => {
-          let badgeClass = "badge pending";
-          if (order.status === 'ACCEPTED') badgeClass = "badge accepted";
-          if (order.status === 'IN_TRANSIT') badgeClass = "badge in_transit";
-          if (order.status === 'DELIVERED') badgeClass = "badge delivered";
-          
-          let minsPassed = null;
-          if (order.status === 'IN_TRANSIT' && order.startedAt) {
-             minsPassed = Math.floor((new Date() - new Date(order.startedAt)) / 60000);
-             if (minsPassed > 20) badgeClass = "badge delayed timer-delayed";
-          }
-
-          return (
-            <div className="card" key={order.id} style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ flex: '1 1 300px' }}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
-                  <strong>#00{order.id}</strong> - {order.customerName}
-                  <span className={badgeClass}>
-                    {order.status} {minsPassed !== null ? `(${minsPassed}m)` : ''}
-                  </span>
-                </div>
-                <p>{order.address} | {order.phone}</p>
-              </div>
-              
-              <div style={{ flex: '0 0 auto', minWidth: '200px' }}>
-                {order.motoboy ? (
-                  <div style={{ padding: '8px 16px', background: '#374151', borderRadius: '8px', textAlign: 'center' }}>
-                    Motoboy: <strong>{order.motoboy.name}</strong>
+            return (
+              <div className="card" key={order.id} style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', justifyContent: 'space-between', marginBottom: 0 }}>
+                <div style={{ flex: '1 1 300px' }}>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px' }}>
+                    <strong>#{order.id.toString().padStart(4, '0')}</strong> - <span style={{fontWeight: 500}}>{order.customerName}</span>
+                    <span className={badgeClass}>
+                      {order.status} {minsPassed !== null ? `(${minsPassed}m)` : ''}
+                    </span>
                   </div>
-                ) : (
-                  <select 
-                    style={{width: '100%', padding: '12px', borderRadius: '8px', background: '#111827', color: '#fff', border: '1px solid #374151'}} 
-                    onChange={(e) => handleAssignOrder(order.id, e.target.value)}
-                    defaultValue=""
-                  >
-                    <option value="" disabled>Atribuir a um motoboy...</option>
-                    {motoboys.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                  </select>
-                )}
+                  <p style={{ margin: 0 }}>{order.address} | {order.phone}</p>
+                </div>
+                
+                <div style={{ flex: '0 0 auto', minWidth: '220px' }}>
+                  {order.motoboy ? (
+                    <div style={{ padding: '8px 16px', background: 'var(--main-bg)', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+                      Motoboy: <strong style={{color: 'var(--text-dark)'}}>{order.motoboy.name}</strong>
+                    </div>
+                  ) : (
+                    <div className="input-group" style={{ marginBottom: 0 }}>
+                      <select 
+                        onChange={(e) => handleAssignOrder(order.id, e.target.value)}
+                        defaultValue=""
+                      >
+                        <option value="" disabled>Atribuir a motoboy...</option>
+                        {motoboys.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )
-        })}
-        {orders.length === 0 && <p style={{color: 'var(--text-secondary)'}}>Nenhum pedido no sistema.</p>}
+            )
+          })}
+          {orders.length === 0 && <p className="text-light text-center" style={{marginTop: '24px'}}>Nenhum pedido no sistema.</p>}
+        </div>
       </div>
-    {isModalOpen && (
+    </>
+  );
+
+  const renderMotoboys = () => (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '900px', margin: '0 auto 40px' }}>
+        <h1 style={{ margin: 0 }}>Equipe de Motoboys</h1>
+        <button className="btn btn-primary" style={{width: 'auto'}} onClick={() => setIsModalOpen(true)}>
+          + Cadastrar Motoboy
+        </button>
+      </div>
+
+      <div className="card" style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>Motoboys Ativos ({motoboys.length})</h3>
+        <ul style={{ listStyle: 'none', padding: 0 }}>
+          {motoboys.map(m => (
+            <li key={m.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 500, color: 'var(--text-dark)' }}>{m.name}</span>
+              <span className="badge delivered" style={{fontSize: '0.7rem'}}>ONLINE</span>
+            </li>
+          ))}
+          {motoboys.length === 0 && <p className="text-light" style={{padding: '16px 0'}}>Nenhum motoboy logado hoje.</p>}
+        </ul>
+      </div>
+    </>
+  );
+
+  const renderFinanceiro = () => (
+    <>
+      <h1 className="text-center" style={{marginBottom: '40px'}}>Financeiro</h1>
+      <div className="card text-center" style={{ maxWidth: '600px', margin: '0 auto', padding: '48px 24px' }}>
+        <span style={{ fontSize: '3rem', display: 'block', marginBottom: '16px' }}>🚧</span>
+        <h3>Módulo em Desenvolvimento</h3>
+        <p>A área financeira estará disponível nas próximas atualizações do sistema.</p>
+      </div>
+    </>
+  );
+
+  return (
+    <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
+      
+      {activeTab === 'dashboard' && renderDashboard()}
+      {activeTab === 'entregas' && renderEntregas()}
+      {activeTab === 'motoboys' && renderMotoboys()}
+      {activeTab === 'financeiro' && renderFinanceiro()}
+
+      {/* Modal para Cadastro */}
+      {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
             <button className="modal-close" onClick={() => setIsModalOpen(false)}>&times;</button>
             <h3 style={{ marginBottom: '16px' }}>Cadastrar Motoboy</h3>
             
             {mbMessage && (
-              <div style={{ padding: '12px', marginBottom: '16px', borderRadius: '8px', backgroundColor: mbMessage.includes('Erro') ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)', color: mbMessage.includes('Erro') ? 'var(--status-red)' : 'var(--status-green)' }}>
+              <div style={{ padding: '12px', marginBottom: '16px', borderRadius: '8px', 
+                backgroundColor: mbMessage.includes('Erro') ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)', 
+                color: mbMessage.includes('Erro') ? 'var(--status-red)' : 'var(--status-green)' 
+              }}>
                 {mbMessage}
               </div>
             )}
@@ -222,7 +286,13 @@ function AdminDashboard() {
           </div>
         </div>
       )}
-    </div>
+
+      {/* Botão de sair global escondido, pode ir no perfil mas colocarei fixo provisoriamente */}
+      <div style={{ position: 'fixed', bottom: '32px', right: '32px' }}>
+        <button className="btn btn-outline" style={{ background: 'white', boxShadow: 'var(--shadow-sm)' }} onClick={handleLogout}>Sair do Sistema</button>
+      </div>
+
+    </Layout>
   );
 }
 
