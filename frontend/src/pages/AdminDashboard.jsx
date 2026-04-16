@@ -8,6 +8,7 @@ function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [motoboys, setMotoboys] = useState([]);
   const [metrics, setMetrics] = useState({ avgTimeMinutes: 0, totalDelivered: 0 });
+  const [filterMotoboyId, setFilterMotoboyId] = useState('');
   const navigate = useNavigate();
 
   // Modal State
@@ -93,38 +94,102 @@ function AdminDashboard() {
     navigate('/login');
   };
 
-  const renderDashboard = () => (
-    <>
-      <h1 className="text-center" style={{marginBottom: '40px'}}>Visão Geral (Hoje)</h1>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', maxWidth: '900px', margin: '0 auto' }}>
-        
-        <div className="card text-center" style={{marginTop: '16px'}}>
-          <div className="card-badge-top">Entregas</div>
-          <p style={{ fontSize: '2.5rem', color: 'var(--text-dark)', fontWeight: 'bold', margin: '16px 0 8px' }}>
-            {metrics.totalDelivered}
-          </p>
-          <p>Concluídas hoje</p>
+  const renderDashboard = () => {
+    const deliveredOrders = orders.filter(o => o.status === 'DELIVERED' && o.startedAt && o.deliveredAt);
+    const filteredOrders = filterMotoboyId 
+      ? deliveredOrders.filter(o => o.motoboyId === parseInt(filterMotoboyId))
+      : deliveredOrders;
+
+    return (
+      <>
+        <h1 className="text-center" style={{marginBottom: '40px'}}>Visão Geral (Hoje)</h1>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', maxWidth: '900px', margin: '0 auto' }}>
+          
+          <div className="card text-center" style={{marginTop: '16px'}}>
+            <div className="card-badge-top">Entregas</div>
+            <p style={{ fontSize: '2.5rem', color: 'var(--text-dark)', fontWeight: 'bold', margin: '16px 0 8px' }}>
+              {metrics.totalDelivered}
+            </p>
+            <p>Concluídas hoje</p>
+          </div>
+
+          <div className="card text-center" style={{marginTop: '16px'}}>
+            <div className="card-badge-top">Desempenho</div>
+            <p style={{ fontSize: '2.5rem', color: 'var(--text-dark)', fontWeight: 'bold', margin: '16px 0 8px' }}>
+              {metrics.avgTimeMinutes}m
+            </p>
+            <p>Tempo Médio</p>
+          </div>
+
+          <div className="card text-center" style={{marginTop: '16px'}}>
+            <div className="card-badge-top">Frota</div>
+            <p style={{ fontSize: '2.5rem', color: 'var(--text-dark)', fontWeight: 'bold', margin: '16px 0 8px' }}>
+              {motoboys.length}
+            </p>
+            <p>Motoboys Online</p>
+          </div>
         </div>
 
-        <div className="card text-center" style={{marginTop: '16px'}}>
-          <div className="card-badge-top">Desempenho</div>
-          <p style={{ fontSize: '2.5rem', color: 'var(--text-dark)', fontWeight: 'bold', margin: '16px 0 8px' }}>
-            {metrics.avgTimeMinutes}m
-          </p>
-          <p>Tempo Médio</p>
-        </div>
+        <div className="card" style={{ maxWidth: '900px', margin: '40px auto 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+            <h3 style={{ margin: 0 }}>Tempo de Entrega por Pedido</h3>
+            <div className="input-group" style={{ marginBottom: 0, width: 'auto', minWidth: '200px' }}>
+              <select 
+                value={filterMotoboyId} 
+                onChange={(e) => setFilterMotoboyId(e.target.value)}
+                style={{ padding: '8px' }}
+              >
+                <option value="">Todos os Motoboys</option>
+                {motoboys.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-        <div className="card text-center" style={{marginTop: '16px'}}>
-          <div className="card-badge-top">Frota</div>
-          <p style={{ fontSize: '2.5rem', color: 'var(--text-dark)', fontWeight: 'bold', margin: '16px 0 8px' }}>
-            {motoboys.length}
-          </p>
-          <p>Motoboys Online</p>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                  <th style={{ padding: '12px 8px' }}>Pedido</th>
+                  <th style={{ padding: '12px 8px' }}>Cliente</th>
+                  <th style={{ padding: '12px 8px' }}>Motoboy</th>
+                  <th style={{ padding: '12px 8px' }}>Tempo Gasto</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredOrders.map(order => {
+                  const startTime = new Date(order.startedAt);
+                  const deliverTime = new Date(order.deliveredAt);
+                  const diffMinutes = Math.floor((deliverTime - startTime) / 60000);
+                  
+                  return (
+                    <tr key={order.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                      <td style={{ padding: '12px 8px', color: 'var(--text-light)' }}>#{order.id.toString().padStart(4, '0')}</td>
+                      <td style={{ padding: '12px 8px', fontWeight: 500 }}>{order.customerName}</td>
+                      <td style={{ padding: '12px 8px' }}>{order.motoboy?.name || 'Desconhecido'}</td>
+                      <td style={{ padding: '12px 8px' }}>
+                        <span className={`badge ${diffMinutes > 20 ? 'delayed' : 'delivered'}`}>
+                          {diffMinutes} min
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {filteredOrders.length === 0 && (
+                  <tr>
+                    <td colSpan="4" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-light)' }}>
+                      Nenhuma entrega concluída encontrada.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-
-      </div>
-    </>
-  );
+      </>
+    );
+  };
 
   const renderEntregas = () => (
     <>
