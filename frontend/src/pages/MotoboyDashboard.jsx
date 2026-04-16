@@ -19,7 +19,7 @@ function MotoboyDashboard() {
 
   const fetchData = async () => {
     try {
-      const { data } = await api.get('/motoboy/orders');
+      const { data } = await api.get(`/motoboy/orders?_t=${new Date().getTime()}`);
       setOrders(data);
     } catch (e) {
       if (e.response?.status === 401) {
@@ -44,10 +44,12 @@ function MotoboyDashboard() {
     if (loading) return;
     setLoading(true);
     try {
-      await api.put(`/orders/${targetOrder.id}/status`, { status: newStatus });
+      const res = await api.put(`/orders/${targetOrder.id}/status`, { status: newStatus });
+      console.log('Status atualizado com sucesso:', res.data);
       await fetchData();
     } catch (e) {
-       alert('Erro ao atualizar status. Tente novamente.');
+       console.error('Erro na requisição:', e.response || e);
+       alert(`Erro ao atualizar status! Código: ${e.response?.status || e.message}. Mensagem: ${e.response?.data?.error || 'Verifique a conexão.'}`);
     } finally {
       setLoading(false);
     }
