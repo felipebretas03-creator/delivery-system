@@ -9,22 +9,29 @@ function Login() {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post('https://delivery-system-production-6da2.up.railway.app/api/auth/login',  { email, password });
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('role', res.data.role);
-      localStorage.setItem('name', res.data.name);
+  e.preventDefault();
+  try {
+    const res = await axios.post(
+      'https://delivery-system-production-6da2.up.railway.app/api/auth/login',
+      { email, password }
+    );
 
-      if (res.data.role === 'ADMIN') {
-        navigate('/admin');
-      } else {
-        navigate('/motoboy');
-      }
-    } catch (err) {
-      setError(err.response?.data?.error || 'Erro ao efetuar login');
+    console.log(res.data); // ✅ AQUI SIM
+
+    localStorage.setItem('token', res.data.token);
+    localStorage.setItem('role', res.data.role);
+    localStorage.setItem('name', res.data.name);
+
+    if (res.data.role === 'ADMIN') {
+      navigate('/admin');
+    } else {
+      navigate('/motoboy');
     }
-  };
+
+  } catch (err) {
+    setError(err.response?.data?.error || 'Erro ao efetuar login');
+  }
+};
 
   return (
     <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
