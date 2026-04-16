@@ -5,17 +5,36 @@ import AdminDashboard from './pages/AdminDashboard';
 import MotoboyDashboard from './pages/MotoboyDashboard';
 import './styles/global.css';
 
-function App() {
+const PrivateRoute = ({ children, allowedRole }) => {
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
+  
+  if (!token || role !== allowedRole) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
 
+const RootRedirect = () => {
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  return <Navigate to={token ? (role === 'ADMIN' ? '/admin' : '/motoboy') : '/login'} replace />;
+};
+
+function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to={token ? (role === 'ADMIN' ? '/admin' : '/motoboy') : '/login'} replace />} />
+        <Route path="/" element={<RootRedirect />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/admin" element={token && role === 'ADMIN' ? <AdminDashboard /> : <Navigate to="/login" replace />} />
-        <Route path="/motoboy" element={token && role === 'MOTOBOY' ? <MotoboyDashboard /> : <Navigate to="/login" replace />} />
+        <Route 
+          path="/admin" 
+          element={<PrivateRoute allowedRole="ADMIN"><AdminDashboard /></PrivateRoute>} 
+        />
+        <Route 
+          path="/motoboy" 
+          element={<PrivateRoute allowedRole="MOTOBOY"><MotoboyDashboard /></PrivateRoute>} 
+        />
       </Routes>
     </Router>
   );
