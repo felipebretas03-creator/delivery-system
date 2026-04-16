@@ -29,7 +29,12 @@ export const getOrders = async (req: AuthRequest, res: Response): Promise<void> 
 export const getMotoboyOrders = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const orders = await prisma.order.findMany({
-      where: { motoboyId: req.user?.id },
+      where: {
+        OR: [
+          { status: 'PENDING' },
+          { motoboyId: req.user?.id }
+        ]
+      },
       orderBy: { createdAt: 'desc' }
     });
     res.json(orders);
@@ -57,7 +62,15 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response): Promis
     const { status } = req.body;
 
     const updateData: any = { status };
-    if (status === 'ACCEPTED') updateData.acceptedAt = new Date();
+    if (status === 'ACCEPTED') {
+      const existingOrder = await prisma.order.findUnique({ where: { id: parseInt(id) } });
+      if (existingOrder?.motoboyId && existingOrder.motoboyId !== req.user?.id) {
+         res.status(400).json({ error: 'Pedido já foi aceito por outro motoboy' });
+         return;
+      }
+      updateData.acceptedAt = new Date();
+      updateData.motoboyId = req.user?.id;
+    }
     if (status === 'IN_TRANSIT') updateData.startedAt = new Date();
     if (status === 'DELIVERED') updateData.deliveredAt = new Date();
 

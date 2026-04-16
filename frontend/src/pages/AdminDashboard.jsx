@@ -252,14 +252,8 @@ function AdminDashboard() {
                       Motoboy: <strong style={{color: 'var(--text-dark)'}}>{order.motoboy.name}</strong>
                     </div>
                   ) : (
-                    <div className="input-group" style={{ marginBottom: 0 }}>
-                      <select 
-                        onChange={(e) => handleAssignOrder(order.id, e.target.value)}
-                        defaultValue=""
-                      >
-                        <option value="" disabled>Atribuir a motoboy...</option>
-                        {motoboys.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                      </select>
+                    <div style={{ padding: '8px 16px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--status-red)', color: 'var(--status-red)', fontWeight: 500 }}>
+                      Aguardando Aceite...
                     </div>
                   )}
                 </div>
