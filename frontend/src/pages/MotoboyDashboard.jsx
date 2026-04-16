@@ -130,12 +130,25 @@ function MotoboyDashboard() {
       })}
 
       <h3 style={{ marginTop: '32px' }}>Histórico (Hoje)</h3>
-      {delivered.slice(0, 5).map(o => (
-        <div className="card" key={o.id} style={{ opacity: 0.7 }}>
-          <h4>{o.customerName}</h4>
-          <p>Entregue com sucesso</p>
-        </div>
-      ))}
+      {delivered.slice(0, 5).map(o => {
+        const startTime = new Date(o.startedAt);
+        const deliverTime = new Date(o.deliveredAt);
+        const diffMinutes = Math.floor((deliverTime - startTime) / 60000);
+
+        return (
+          <div className="card" key={o.id} style={{ opacity: 0.8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h4 style={{ margin: '0 0 4px 0' }}>{o.customerName}</h4>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-light)' }}>Entregue com sucesso</p>
+            </div>
+            {o.startedAt && o.deliveredAt && (
+              <span className={`badge ${diffMinutes > 20 ? 'delayed' : 'delivered'}`} style={{ fontSize: '0.9rem' }}>
+                Tempo: {diffMinutes} min
+              </span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
