@@ -5,7 +5,7 @@ import { AuthRequest } from '../middlewares/auth';
 export const getActiveMotoboys = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const motoboys = await prisma.user.findMany({
-      where: { role: 'MOTOBOY', status: 'ONLINE' },
+      where: { role: 'MOTOBOY' },
       select: { id: true, name: true, status: true }
     });
     res.json(motoboys);

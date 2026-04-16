@@ -124,7 +124,7 @@ function AdminDashboard() {
           <div className="card text-center" style={{marginTop: '16px'}}>
             <div className="card-badge-top">Frota</div>
             <p style={{ fontSize: '2.5rem', color: 'var(--text-dark)', fontWeight: 'bold', margin: '16px 0 8px' }}>
-              {motoboys.length}
+              {motoboys.filter(m => m.status === 'ONLINE').length}
             </p>
             <p>Motoboys Online</p>
           </div>
@@ -276,15 +276,17 @@ function AdminDashboard() {
       </div>
 
       <div className="card" style={{ maxWidth: '900px', margin: '0 auto' }}>
-        <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>Motoboys Ativos ({motoboys.length})</h3>
+        <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>Todos os Motoboys ({motoboys.length})</h3>
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {motoboys.map(m => (
             <li key={m.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: 500, color: 'var(--text-dark)' }}>{m.name}</span>
-              <span className="badge delivered" style={{fontSize: '0.7rem'}}>ONLINE</span>
+              <span className={`badge ${m.status === 'ONLINE' ? 'delivered' : 'pending'}`} style={{fontSize: '0.7rem'}}>
+                {m.status === 'ONLINE' ? 'ONLINE' : 'OFFLINE'}
+              </span>
             </li>
           ))}
-          {motoboys.length === 0 && <p className="text-light" style={{padding: '16px 0'}}>Nenhum motoboy logado hoje.</p>}
+          {motoboys.length === 0 && <p className="text-light" style={{padding: '16px 0'}}>Nenhum motoboy cadastrado no sistema.</p>}
         </ul>
       </div>
     </>
