@@ -9,6 +9,8 @@ function MotoboyDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(false);
+
   const token = localStorage.getItem('token');
   const api = axios.create({
     baseURL: 'https://delivery-system-production-6da2.up.railway.app/api',
@@ -30,19 +32,33 @@ function MotoboyDashboard() {
   useEffect(() => {
     fetchData();
     const interval = setInterval(() => {
-      fetchData();
+      if (!loading) {
+        fetchData();
+      }
       setCurrentTime(new Date());
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [loading]);
 
   const handleStatusChange = async (targetOrder, newStatus) => {
-    await api.put(`/orders/${targetOrder.id}/status`, { status: newStatus });
-    fetchData();
+    if (loading) return;
+    setLoading(true);
+    try {
+      await api.put(`/orders/${targetOrder.id}/status`, { status: newStatus });
+      await fetchData();
+    } catch (e) {
+       alert('Erro ao atualizar status. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleLogout = () => {
-    api.put('/motoboy/status', { status: 'OFFLINE' });
+  const handleLogout = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      await api.put('/motoboy/status', { status: 'OFFLINE' });
+    } catch(e) {}
     localStorage.clear();
     navigate('/login');
   };
@@ -63,7 +79,9 @@ function MotoboyDashboard() {
           <h2>Olá, {name}</h2>
           <span className="badge accepted">Estou {status}</span>
         </div>
-        <button className="btn btn-outline" style={{width: 'auto', padding: '8px 16px'}} onClick={handleLogout}>Sair (Check-out)</button>
+        <button className="btn btn-outline" style={{width: 'auto', padding: '8px 16px'}} onClick={handleLogout} disabled={loading}>
+          {loading ? 'Aguarde...' : 'Sair (Check-out)'}
+        </button>
       </header>
 
       <h3>Entregas Atuais ({pendingOrTransit.length})</h3>
@@ -90,18 +108,18 @@ function MotoboyDashboard() {
             
             <div style={{ marginTop: '16px' }}>
               {order.status === 'PENDING' && (
-                <button className="btn btn-yellow" onClick={() => handleStatusChange(order, 'ACCEPTED')}>
-                  Aceitar Entrega
+                <button className="btn btn-yellow" onClick={() => handleStatusChange(order, 'ACCEPTED')} disabled={loading}>
+                  {loading ? 'Aguarde...' : 'Aceitar Entrega'}
                 </button>
               )}
               {order.status === 'ACCEPTED' && (
-                <button className="btn btn-primary" onClick={() => handleStatusChange(order, 'IN_TRANSIT')}>
-                  Iniciar Entrega
+                <button className="btn btn-primary" onClick={() => handleStatusChange(order, 'IN_TRANSIT')} disabled={loading}>
+                  {loading ? 'Aguarde...' : 'Iniciar Entrega'}
                 </button>
               )}
               {order.status === 'IN_TRANSIT' && (
-                <button className="btn btn-green" onClick={() => handleStatusChange(order, 'DELIVERED')}>
-                  Finalizar Entrega (Entregue)
+                <button className="btn btn-green" onClick={() => handleStatusChange(order, 'DELIVERED')} disabled={loading}>
+                  {loading ? 'Aguarde...' : 'Finalizar Entrega (Entregue)'}
                 </button>
               )}
             </div>
