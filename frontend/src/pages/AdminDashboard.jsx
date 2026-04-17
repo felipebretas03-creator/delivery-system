@@ -550,7 +550,7 @@ function AdminDashboard() {
 
       {/* Botão de sair global escondido, pode ir no perfil mas colocarei fixo provisoriamente */}
       <div style={{ position: 'fixed', bottom: '32px', right: '32px' }}>
-        <button className="btn btn-outline" style={{ background: 'white', boxShadow: 'var(--shadow-sm)' }} onClick={handleLogout}>Sair do Sistema</button>
+        <button className="btn btn-outline" style={{ background: 'white', color: 'var(--status-red)', borderColor: 'var(--status-red)', boxShadow: 'var(--shadow-sm)' }} onClick={handleLogout}>Sair do Sistema</button>
       </div>
 
     </Layout>
