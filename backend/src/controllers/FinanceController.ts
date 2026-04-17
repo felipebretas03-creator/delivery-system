@@ -46,7 +46,7 @@ export const getAdminFinances = async (req: AuthRequest, res: Response): Promise
 
 export const payMotoboy = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const motoboyId = parseInt(req.params.id);
+    const motoboyId = parseInt(req.params.id as string);
     if (!motoboyId) {
       res.status(400).json({ error: 'Motoboy ID inválido' });
       return;
