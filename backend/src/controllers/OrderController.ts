@@ -4,9 +4,15 @@ import { AuthRequest } from '../middlewares/auth';
 
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { customerName, address, phone } = req.body;
+    const { customerName, address, phone, orderValue, deliveryFee } = req.body;
     const order = await prisma.order.create({
-      data: { customerName, address, phone }
+      data: { 
+        customerName, 
+        address, 
+        phone,
+        orderValue: orderValue ? parseFloat(orderValue) : 0,
+        deliveryFee: deliveryFee ? parseFloat(deliveryFee) : 0
+      }
     });
     res.json(order);
   } catch (error) {

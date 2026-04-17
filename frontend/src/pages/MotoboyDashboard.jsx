@@ -6,6 +6,7 @@ function MotoboyDashboard() {
   const [orders, setOrders] = useState([]);
   const [status, setStatus] = useState('ONLINE');
   const [name, setName] = useState(localStorage.getItem('name'));
+  const [finance, setFinance] = useState({ pendingBalance: 0, totalReceived: 0, recentHistory: [] });
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
 
@@ -19,8 +20,12 @@ function MotoboyDashboard() {
 
   const fetchData = async () => {
     try {
-      const { data } = await api.get(`/motoboy/orders?_t=${new Date().getTime()}`);
-      setOrders(data);
+      const [ordRes, finRes] = await Promise.all([
+        api.get(`/motoboy/orders?_t=${new Date().getTime()}`),
+        api.get(`/motoboy/finance?_t=${new Date().getTime()}`)
+      ]);
+      setOrders(ordRes.data);
+      setFinance(finRes.data);
     } catch (e) {
       if (e.response?.status === 401) {
         localStorage.clear();
@@ -129,6 +134,17 @@ function MotoboyDashboard() {
         )
       })}
 
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '32px' }}>
+        <div className="card text-center" style={{ margin: 0, padding: '16px' }}>
+          <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-light)' }}>Saldo a Receber</p>
+          <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--status-red)' }}>R$ {(finance?.pendingBalance || 0).toFixed(2).replace('.', ',')}</p>
+        </div>
+        <div className="card text-center" style={{ margin: 0, padding: '16px' }}>
+          <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-light)' }}>Total Recebido</p>
+          <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--status-green)' }}>R$ {(finance?.totalReceived || 0).toFixed(2).replace('.', ',')}</p>
+        </div>
+      </div>
+
       <h3 style={{ marginTop: '32px' }}>Histórico (Hoje)</h3>
       {delivered.slice(0, 5).map(o => {
         const startTime = new Date(o.startedAt);
@@ -136,10 +152,12 @@ function MotoboyDashboard() {
         const diffMinutes = Math.floor((deliverTime - startTime) / 60000);
 
         return (
-          <div className="card" key={o.id} style={{ opacity: 0.8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="card" key={o.id} style={{ opacity: o.motoboyPaid ? 0.6 : 0.9, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h4 style={{ margin: '0 0 4px 0' }}>{o.customerName}</h4>
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-light)' }}>Entregue com sucesso</p>
+              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-light)' }}>
+                {o.motoboyPaid ? '✓ Pago' : '⏳ Pendente'} | Taxa: R$ {(o.deliveryFee || 0).toFixed(2).replace('.', ',')}
+              </p>
             </div>
             {o.startedAt && o.deliveredAt && (
               <span className={`badge ${diffMinutes > 20 ? 'delayed' : 'delivered'}`} style={{ fontSize: '0.9rem' }}>

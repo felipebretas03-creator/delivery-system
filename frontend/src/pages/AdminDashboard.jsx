@@ -19,6 +19,9 @@ function AdminDashboard() {
   const [customerName, setCustomerName] = useState('');
   const [address, setAddress] = useState('');
   const [phone, setPhone] = useState('');
+  const [orderValue, setOrderValue] = useState('');
+  const [deliveryFee, setDeliveryFee] = useState('');
+  const [financeData, setFinanceData] = useState({ totalSystemValue: 0, totalPendingToMotoboys: 0, motoboys: [] });
 
   // Motoboy Form State
   const [mbName, setMbName] = useState('');
@@ -34,14 +37,16 @@ function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [ordRes, motRes, metRes] = await Promise.all([
+      const [ordRes, motRes, metRes, finRes] = await Promise.all([
         api.get('/orders'),
         api.get('/motoboys/active'),
-        api.get('/metrics')
+        api.get('/metrics'),
+        api.get('/finance')
       ]);
       setOrders(ordRes.data);
       setMotoboys(motRes.data);
       setMetrics(metRes.data);
+      setFinanceData(finRes.data);
     } catch (e) {
       if (e.response?.status === 401) {
         localStorage.clear();
@@ -58,9 +63,20 @@ function AdminDashboard() {
 
   const handleCreateOrder = async (e) => {
     e.preventDefault();
-    await api.post('/orders', { customerName, address, phone });
-    setCustomerName(''); setAddress(''); setPhone('');
+    await api.post('/orders', { customerName, address, phone, orderValue, deliveryFee });
+    setCustomerName(''); setAddress(''); setPhone(''); setOrderValue(''); setDeliveryFee('');
     fetchData();
+  };
+
+  const handlePayMotoboy = async (id) => {
+    if(!window.confirm('Confirmar o pagamento das corridas deste motoboy?')) return;
+    try {
+      const res = await api.put(`/finance/pay/${id}`);
+      alert(res.data.message);
+      fetchData();
+    } catch(err) {
+      alert('Erro ao pagar motoboy.');
+    }
   };
 
   const handleAssignOrder = async (orderId, motoboyId) => {
@@ -215,6 +231,16 @@ function AdminDashboard() {
               <input required placeholder="Telefone" value={phone} onChange={e => setPhone(e.target.value)} />
             </div>
           </div>
+          <div style={{flex: '1 1 150px'}}>
+            <div className="input-group" style={{marginBottom: 0}}>
+              <input type="number" step="0.01" placeholder="Valor do Pedido (R$)" value={orderValue} onChange={e => setOrderValue(e.target.value)} />
+            </div>
+          </div>
+          <div style={{flex: '1 1 150px'}}>
+            <div className="input-group" style={{marginBottom: 0}}>
+              <input type="number" step="0.01" placeholder="Taxa Entrega (R$)" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} />
+            </div>
+          </div>
           <button className="btn btn-primary" style={{width: 'auto', padding: '0 24px'}}>Criar</button>
         </form>
       </div>
@@ -294,11 +320,51 @@ function AdminDashboard() {
 
   const renderFinanceiro = () => (
     <>
-      <h1 className="text-center" style={{marginBottom: '40px'}}>Financeiro</h1>
-      <div className="card text-center" style={{ maxWidth: '600px', margin: '0 auto', padding: '48px 24px' }}>
-        <span style={{ fontSize: '3rem', display: 'block', marginBottom: '16px' }}>🚧</span>
-        <h3>Módulo em Desenvolvimento</h3>
-        <p>A área financeira estará disponível nas próximas atualizações do sistema.</p>
+      <h1 className="text-center" style={{marginBottom: '40px'}}>Financeiro Administrativo</h1>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', maxWidth: '900px', margin: '0 auto', paddingBottom: '32px' }}>
+        
+        <div className="card text-center" style={{marginTop: '16px'}}>
+          <div className="card-badge-top" style={{background: 'var(--primary-color)'}}>Movimento Total</div>
+          <p style={{ fontSize: '2.5rem', color: 'var(--text-dark)', fontWeight: 'bold', margin: '16px 0 8px' }}>
+            R$ {(financeData?.totalSystemValue || 0).toFixed(2).replace('.', ',')}
+          </p>
+          <p>Valor Total dos Pedidos (Itens)</p>
+        </div>
+
+        <div className="card text-center" style={{marginTop: '16px', border: '2px solid rgba(239, 68, 68, 0.4)'}}>
+          <div className="card-badge-top" style={{background: 'var(--status-red)'}}>A Pagar</div>
+          <p style={{ fontSize: '2.5rem', color: 'var(--status-red)', fontWeight: 'bold', margin: '16px 0 8px' }}>
+            R$ {(financeData?.totalPendingToMotoboys || 0).toFixed(2).replace('.', ',')}
+          </p>
+          <p>Devendo aos Motoboys</p>
+        </div>
+      </div>
+
+      <div className="card" style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>Fechamento de Motoboys</h3>
+        
+        {financeData?.motoboys?.length === 0 ? (
+          <p className="text-center" style={{padding: '24px 0', color: 'var(--text-light)'}}>Nenhum saldo pendente com motoboys.</p>
+        ) : (
+          <ul style={{ listStyle: 'none', padding: 0 }}>
+            {financeData?.motoboys?.map(m => (
+              <li key={m.id} style={{ padding: '16px 0', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h4 style={{ margin: '0 0 4px 0', color: 'var(--text-dark)' }}>{m.name}</h4>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>{m.pendingOrdersCount} entregas pendentes</span>
+                </div>
+                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--status-red)' }}>
+                    R$ {m.pendingBalance.toFixed(2).replace('.', ',')}
+                  </span>
+                  <button className="btn btn-green" style={{ width: 'auto', padding: '8px 16px' }} onClick={() => handlePayMotoboy(m.id)}>
+                    Dar Baixa (Pagar)
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </>
   );

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { login, registerMotoboy } from './controllers/AuthController';
 import { createOrder, getOrders, getMotoboyOrders, assignOrder, updateOrderStatus } from './controllers/OrderController';
 import { getActiveMotoboys, updateMotoboyStatus, getDashboardMetrics } from './controllers/MotoboyController';
+import { getAdminFinances, payMotoboy, getMotoboyFinances } from './controllers/FinanceController';
 import { authMiddleware, requireAdmin, requireMotoboy } from './middlewares/auth';
 
 const router = Router();
@@ -21,6 +22,11 @@ router.put('/orders/:id/status', authMiddleware, requireMotoboy, updateOrderStat
 router.get('/motoboys/active', authMiddleware, requireAdmin, getActiveMotoboys);
 router.put('/motoboy/status', authMiddleware, requireMotoboy, updateMotoboyStatus);
 router.get('/metrics', authMiddleware, requireAdmin, getDashboardMetrics);
+
+// Financeiro
+router.get('/finance', authMiddleware, requireAdmin, getAdminFinances);
+router.put('/finance/pay/:id', authMiddleware, requireAdmin, payMotoboy);
+router.get('/motoboy/finance', authMiddleware, requireMotoboy, getMotoboyFinances);
 
 console.log('🔥 ROTAS CARREGADAS');
 

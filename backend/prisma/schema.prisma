@@ -24,6 +24,9 @@ model Order {
   address         String
   phone           String
   status          String    @default("PENDING") // PENDING, ACCEPTED, IN_TRANSIT, DELIVERED
+  orderValue      Float     @default(0.0)
+  deliveryFee     Float     @default(0.0)
+  motoboyPaid     Boolean   @default(false)
   createdAt       DateTime  @default(now())
   acceptedAt      DateTime?
   startedAt       DateTime?
