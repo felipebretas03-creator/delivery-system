@@ -34,6 +34,9 @@ function AdminDashboard() {
   // Settings State
   const [fixedFee, setFixedFee] = useState('');
 
+  // Stats State
+  const [statsMotoboy, setStatsMotoboy] = useState(null);
+
   const token = localStorage.getItem('token');
   const api = axios.create({
     baseURL: 'https://delivery-system-production-6da2.up.railway.app/api',
@@ -113,6 +116,22 @@ function AdminDashboard() {
     } catch (err) {
       alert('Erro ao excluir.');
     }
+  };
+
+  const handleOpenStats = (m) => {
+    const mOrders = orders.filter(o => o.motoboyId === m.id && o.status === 'DELIVERED');
+    let onTimeCount = 0;
+    let delayedCount = 0;
+    mOrders.forEach(o => {
+      if (o.startedAt && o.deliveredAt) {
+        const diff = Math.floor((new Date(o.deliveredAt) - new Date(o.startedAt)) / 60000);
+        if (diff > 20) delayedCount++;
+        else onTimeCount++;
+      } else {
+        onTimeCount++; // if missing timestamps, assume on time
+      }
+    });
+    setStatsMotoboy({ ...m, total: mOrders.length, onTimeCount, delayedCount });
   };
 
   const handleSaveMotoboy = async (e) => {
@@ -347,6 +366,9 @@ function AdminDashboard() {
                 </span>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', width: 'auto' }} onClick={() => handleOpenStats(m)}>
+                  Estatísticas
+                </button>
                 <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', width: 'auto' }} onClick={() => handleOpenEditMotoboy(m)}>
                   Editar
                 </button>
@@ -493,6 +515,35 @@ function AdminDashboard() {
                 {isCreating ? 'Aguarde...' : (editMotoboyId ? 'Salvar Alterações' : 'Finalizar Cadastro')}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Estatísticas */}
+      {statsMotoboy && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target.className === 'modal-overlay') setStatsMotoboy(null); }}>
+          <div className="modal-content text-center">
+            <button className="modal-close" onClick={() => setStatsMotoboy(null)}>&times;</button>
+            <h3 style={{ marginBottom: '8px' }}>Estatísticas de {statsMotoboy.name}</h3>
+            <p style={{ color: 'var(--text-light)', marginBottom: '24px', fontSize: '0.9rem' }}>Valores Históricos Consolidados</p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+              <div className="card text-center" style={{ margin: 0, padding: '16px' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-light)' }}>Entregas Concluídas</p>
+                  <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>{statsMotoboy.total}</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="card text-center" style={{ margin: 0, padding: '16px', background: 'rgba(16, 185, 129, 0.05)' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-light)' }}>No Horário (✓)</p>
+                  <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--status-green)' }}>{statsMotoboy.onTimeCount}</p>
+                </div>
+                <div className="card text-center" style={{ margin: 0, padding: '16px', background: 'rgba(239, 68, 68, 0.05)' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-light)' }}>Atrasadas (⏳)</p>
+                  <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--status-red)' }}>{statsMotoboy.delayedCount}</p>
+                </div>
+              </div>
+            </div>
+            <button className="btn btn-outline" style={{ marginTop: '24px' }} onClick={() => setStatsMotoboy(null)}>Fechar</button>
           </div>
         </div>
       )}
