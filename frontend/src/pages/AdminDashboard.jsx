@@ -29,6 +29,7 @@ function AdminDashboard() {
   const [mbPassword, setMbPassword] = useState('');
   const [mbSalary, setMbSalary] = useState('');
   const [mbMessage, setMbMessage] = useState('');
+  const [editMotoboyId, setEditMotoboyId] = useState(null);
   
   // Settings State
   const [fixedFee, setFixedFee] = useState('');
@@ -91,21 +92,48 @@ function AdminDashboard() {
     fetchData();
   };
 
-  const handleCreateMotoboy = async (e) => {
+  const handleOpenCreateMotoboy = () => {
+    setEditMotoboyId(null);
+    setMbName(''); setMbUsername(''); setMbPassword(''); setMbSalary(''); setMbMessage('');
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditMotoboy = (m) => {
+    setEditMotoboyId(m.id);
+    setMbName(m.name); setMbUsername(m.username); setMbPassword(''); setMbSalary(m.salary || 0); setMbMessage('');
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteMotoboy = async (id) => {
+    if (!window.confirm('Tem certeza que deseja apagar permanentemente este Motoboy? As entregas passadas ficarão anônimas no relátorio.')) return;
+    try {
+      await api.delete(`/motoboys/${id}`);
+      fetchData();
+      alert('Excluído com sucesso.');
+    } catch (err) {
+      alert('Erro ao excluir.');
+    }
+  };
+
+  const handleSaveMotoboy = async (e) => {
     e.preventDefault();
     setIsCreating(true);
     setMbMessage('');
     try {
-      await api.post('/auth/register', { name: mbName, username: mbUsername, password: mbPassword, salary: mbSalary });
-      setMbMessage('Motoboy criado com sucesso!');
-      setMbName(''); setMbUsername(''); setMbPassword(''); setMbSalary('');
+      if (editMotoboyId) {
+        await api.put(`/motoboys/${editMotoboyId}`, { name: mbName, username: mbUsername, password: mbPassword, salary: mbSalary });
+        setMbMessage('Atualizado com sucesso!');
+      } else {
+        await api.post('/auth/register', { name: mbName, username: mbUsername, password: mbPassword, salary: mbSalary });
+        setMbMessage('Motoboy criado com sucesso!');
+      }
       fetchData();
       setTimeout(() => {
         setMbMessage('');
         setIsModalOpen(false);
       }, 1500);
     } catch (err) {
-      setMbMessage(err.response?.data?.error || 'Erro ao cadastrar. Verifique os dados.');
+      setMbMessage(err.response?.data?.error || 'Erro ao salvar. Verifique os dados.');
     } finally {
       setIsCreating(false);
     }
@@ -302,7 +330,7 @@ function AdminDashboard() {
     <>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '900px', margin: '0 auto 40px' }}>
         <h1 style={{ margin: 0 }}>Equipe de Motoboys</h1>
-        <button className="btn btn-primary" style={{width: 'auto'}} onClick={() => setIsModalOpen(true)}>
+        <button className="btn btn-primary" style={{width: 'auto'}} onClick={handleOpenCreateMotoboy}>
           + Cadastrar Motoboy
         </button>
       </div>
@@ -312,10 +340,20 @@ function AdminDashboard() {
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {motoboys.map(m => (
             <li key={m.id} style={{ padding: '12px 0', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontWeight: 500, color: 'var(--text-dark)' }}>{m.name}</span>
-              <span className={`badge ${m.status === 'ONLINE' ? 'delivered' : 'pending'}`} style={{fontSize: '0.7rem'}}>
-                {m.status === 'ONLINE' ? 'ONLINE' : 'OFFLINE'}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <span style={{ fontWeight: 500, color: 'var(--text-dark)' }}>{m.name}</span>
+                <span className={`badge ${m.status === 'ONLINE' ? 'delivered' : 'pending'}`} style={{fontSize: '0.7rem'}}>
+                  {m.status === 'ONLINE' ? 'ONLINE' : 'OFFLINE'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', width: 'auto' }} onClick={() => handleOpenEditMotoboy(m)}>
+                  Editar
+                </button>
+                <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', width: 'auto', borderColor: 'var(--status-red)', color: 'var(--status-red)' }} onClick={() => handleDeleteMotoboy(m.id)}>
+                  Excluir
+                </button>
+              </div>
             </li>
           ))}
           {motoboys.length === 0 && <p className="text-light" style={{padding: '16px 0'}}>Nenhum motoboy cadastrado no sistema.</p>}
@@ -423,7 +461,7 @@ function AdminDashboard() {
         <div className="modal-overlay">
           <div className="modal-content">
             <button className="modal-close" onClick={() => setIsModalOpen(false)}>&times;</button>
-            <h3 style={{ marginBottom: '16px' }}>Cadastrar Motoboy</h3>
+            <h3 style={{ marginBottom: '16px' }}>{editMotoboyId ? 'Editar Motoboy' : 'Cadastrar Motoboy'}</h3>
             
             {mbMessage && (
               <div style={{ padding: '12px', marginBottom: '16px', borderRadius: '8px', 
@@ -434,7 +472,7 @@ function AdminDashboard() {
               </div>
             )}
 
-            <form onSubmit={handleCreateMotoboy}>
+            <form onSubmit={handleSaveMotoboy}>
               <div className="input-group">
                 <label>Nome Completo</label>
                 <input required type="text" placeholder="Ex: João da Silva" value={mbName} onChange={e => setMbName(e.target.value)} disabled={isCreating} />
@@ -444,15 +482,15 @@ function AdminDashboard() {
                 <input required type="text" placeholder="ex: felipe_motoboy" value={mbUsername} onChange={e => setMbUsername(e.target.value)} disabled={isCreating} />
               </div>
               <div className="input-group">
-                <label>Senha</label>
-                <input required type="password" placeholder="Mínimo 6 caracteres" value={mbPassword} onChange={e => setMbPassword(e.target.value)} disabled={isCreating} />
+                <label>Senha {editMotoboyId && '(Opcional se não for mudar)'}</label>
+                <input type="password" required={!editMotoboyId} placeholder="Mínimo 6 caracteres" value={mbPassword} onChange={e => setMbPassword(e.target.value)} disabled={isCreating} />
               </div>
               <div className="input-group">
                 <label>Salário / Fixo Contratual (R$)</label>
                 <input type="number" step="0.01" placeholder="Deixe 0 se apenas ganhar por taxa" value={mbSalary} onChange={e => setMbSalary(e.target.value)} disabled={isCreating} />
               </div>
               <button type="submit" className="btn btn-primary" style={{ marginTop: '24px'}} disabled={isCreating}>
-                {isCreating ? 'Cadastrando...' : 'Finalizar Cadastro'}
+                {isCreating ? 'Aguarde...' : (editMotoboyId ? 'Salvar Alterações' : 'Finalizar Cadastro')}
               </button>
             </form>
           </div>

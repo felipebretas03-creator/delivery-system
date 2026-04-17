@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { login, registerMotoboy } from './controllers/AuthController';
 import { createOrder, getOrders, getMotoboyOrders, assignOrder, updateOrderStatus } from './controllers/OrderController';
-import { getActiveMotoboys, updateMotoboyStatus, getDashboardMetrics } from './controllers/MotoboyController';
+import { getActiveMotoboys, updateMotoboyStatus, getDashboardMetrics, updateMotoboy, deleteMotoboy } from './controllers/MotoboyController';
 import { getAdminFinances, payMotoboy, getMotoboyFinances } from './controllers/FinanceController';
 import { getConfig, setConfig } from './controllers/ConfigController';
 import { authMiddleware, requireAdmin, requireMotoboy } from './middlewares/auth';
@@ -22,6 +22,8 @@ router.put('/orders/:id/status', authMiddleware, requireMotoboy, updateOrderStat
 // Motoboys
 router.get('/motoboys/active', authMiddleware, requireAdmin, getActiveMotoboys);
 router.put('/motoboy/status', authMiddleware, requireMotoboy, updateMotoboyStatus);
+router.put('/motoboys/:id', authMiddleware, requireAdmin, updateMotoboy);
+router.delete('/motoboys/:id', authMiddleware, requireAdmin, deleteMotoboy);
 router.get('/metrics', authMiddleware, requireAdmin, getDashboardMetrics);
 
 // Financeiro
