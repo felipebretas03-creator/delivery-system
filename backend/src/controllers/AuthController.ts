@@ -54,7 +54,7 @@ export const registerMotoboy = async (req: AuthRequest, res: Response): Promise<
          return;
       }
 
-      const { name, username, password } = req.body;
+      const { name, username, password, salary } = req.body;
       if (!name || !username || !password) {
          res.status(400).json({ error: 'Todos os campos são obrigatórios' });
          return;
@@ -68,7 +68,13 @@ export const registerMotoboy = async (req: AuthRequest, res: Response): Promise<
 
       const hashed = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({
-         data: { name, username, password: hashed, role: 'MOTOBOY' }
+         data: { 
+           name, 
+           username, 
+           password: hashed, 
+           role: 'MOTOBOY',
+           salary: salary ? parseFloat(salary) : 0
+         }
       });
       res.json({ message: 'Motoboy registrado com sucesso', id: user.id });
    } catch(error) {

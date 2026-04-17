@@ -27,7 +27,11 @@ function AdminDashboard() {
   const [mbName, setMbName] = useState('');
   const [mbUsername, setMbUsername] = useState('');
   const [mbPassword, setMbPassword] = useState('');
+  const [mbSalary, setMbSalary] = useState('');
   const [mbMessage, setMbMessage] = useState('');
+  
+  // Settings State
+  const [fixedFee, setFixedFee] = useState('');
 
   const token = localStorage.getItem('token');
   const api = axios.create({
@@ -37,16 +41,18 @@ function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [ordRes, motRes, metRes, finRes] = await Promise.all([
+      const [ordRes, motRes, metRes, finRes, cfgRes] = await Promise.all([
         api.get('/orders'),
         api.get('/motoboys/active'),
         api.get('/metrics'),
-        api.get('/finance')
+        api.get('/finance'),
+        api.get('/config/FIXED_FEE')
       ]);
       setOrders(ordRes.data);
       setMotoboys(motRes.data);
       setMetrics(metRes.data);
       setFinanceData(finRes.data);
+      setFixedFee(cfgRes.data.value || '');
     } catch (e) {
       if (e.response?.status === 401) {
         localStorage.clear();
@@ -90,9 +96,9 @@ function AdminDashboard() {
     setIsCreating(true);
     setMbMessage('');
     try {
-      await api.post('/auth/register', { name: mbName, username: mbUsername, password: mbPassword });
+      await api.post('/auth/register', { name: mbName, username: mbUsername, password: mbPassword, salary: mbSalary });
       setMbMessage('Motoboy criado com sucesso!');
-      setMbName(''); setMbUsername(''); setMbPassword('');
+      setMbName(''); setMbUsername(''); setMbPassword(''); setMbSalary('');
       fetchData();
       setTimeout(() => {
         setMbMessage('');
@@ -238,7 +244,7 @@ function AdminDashboard() {
           </div>
           <div style={{flex: '1 1 150px'}}>
             <div className="input-group" style={{marginBottom: 0}}>
-              <input type="number" step="0.01" placeholder="Taxa Entrega (R$)" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} />
+              <input type="number" step="0.01" placeholder="Taxa Entrega (Automático se vazio)" value={deliveryFee} onChange={e => setDeliveryFee(e.target.value)} />
             </div>
           </div>
           <button className="btn btn-primary" style={{width: 'auto', padding: '0 24px'}}>Criar</button>
@@ -318,9 +324,35 @@ function AdminDashboard() {
     </>
   );
 
+  const handleSaveConfig = async () => {
+    try {
+      await api.put('/config', { key: 'FIXED_FEE', value: fixedFee });
+      alert('Taxa Fixa global salva com sucesso!');
+    } catch(err) {
+      alert('Erro ao salvar taxa fixa');
+    }
+  };
+
   const renderFinanceiro = () => (
     <>
       <h1 className="text-center" style={{marginBottom: '40px'}}>Financeiro Administrativo</h1>
+      
+      <div className="card" style={{ maxWidth: '900px', margin: '0 auto 24px' }}>
+        <h3 style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px' }}>Configurações Globais</h3>
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '16px', flexWrap: 'wrap' }}>
+          <div className="input-group" style={{ flex: '1 1 200px', marginBottom: 0 }}>
+            <label>Taxa Fixa de Entrega Padrão (R$)</label>
+            <input type="number" step="0.01" placeholder="Ex: 5.00" value={fixedFee} onChange={e => setFixedFee(e.target.value)} />
+          </div>
+          <button className="btn btn-primary" style={{ width: 'auto' }} onClick={handleSaveConfig}>
+            Salvar Taxa
+          </button>
+        </div>
+        <p style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--text-light)' }}>
+          * Esta taxa será aplicada automaticamente a novas entregas caso o campo "Taxa Entrega" não seja preenchido manualmente.
+        </p>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '24px', maxWidth: '900px', margin: '0 auto', paddingBottom: '32px' }}>
         
         <div className="card text-center" style={{marginTop: '16px'}}>
@@ -405,6 +437,10 @@ function AdminDashboard() {
               <div className="input-group">
                 <label>Senha</label>
                 <input required type="password" placeholder="Mínimo 6 caracteres" value={mbPassword} onChange={e => setMbPassword(e.target.value)} disabled={isCreating} />
+              </div>
+              <div className="input-group">
+                <label>Salário / Fixo Contratual (R$)</label>
+                <input type="number" step="0.01" placeholder="Deixe 0 se apenas ganhar por taxa" value={mbSalary} onChange={e => setMbSalary(e.target.value)} disabled={isCreating} />
               </div>
               <button type="submit" className="btn btn-primary" style={{ marginTop: '24px'}} disabled={isCreating}>
                 {isCreating ? 'Cadastrando...' : 'Finalizar Cadastro'}

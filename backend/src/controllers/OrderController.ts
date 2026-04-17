@@ -5,13 +5,24 @@ import { AuthRequest } from '../middlewares/auth';
 export const createOrder = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { customerName, address, phone, orderValue, deliveryFee } = req.body;
+
+    let finalDeliveryFee = deliveryFee ? parseFloat(deliveryFee) : 0;
+    
+    // If no manual delivery fee is provided, try to fetch the fixed fee
+    if (!deliveryFee) {
+      const config = await prisma.systemConfig.findUnique({ where: { key: 'FIXED_FEE' } });
+      if (config && config.value) {
+        finalDeliveryFee = parseFloat(config.value);
+      }
+    }
+
     const order = await prisma.order.create({
       data: { 
         customerName, 
         address, 
         phone,
         orderValue: orderValue ? parseFloat(orderValue) : 0,
-        deliveryFee: deliveryFee ? parseFloat(deliveryFee) : 0
+        deliveryFee: finalDeliveryFee
       }
     });
     res.json(order);
