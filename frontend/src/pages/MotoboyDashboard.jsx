@@ -6,7 +6,7 @@ function MotoboyDashboard() {
   const [orders, setOrders] = useState([]);
   const [status, setStatus] = useState('ONLINE');
   const [name, setName] = useState(localStorage.getItem('name'));
-  const [finance, setFinance] = useState({ pendingBalance: 0, totalReceived: 0, recentHistory: [] });
+  const [finance, setFinance] = useState({ pendingBalance: 0, totalReceived: 0, salary: 0, onTimeCount: 0, delayedCount: 0, recentHistory: [] });
   const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
 
@@ -136,17 +136,22 @@ function MotoboyDashboard() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '32px' }}>
         <div className="card text-center" style={{ margin: 0, padding: '16px' }}>
-          <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-light)' }}>Saldo a Receber</p>
-          <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--status-red)' }}>R$ {(finance?.pendingBalance || 0).toFixed(2).replace('.', ',')}</p>
+          <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-light)' }}>Total a Receber</p>
+          <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--status-red)' }}>R$ {((finance?.pendingBalance || 0) + (finance?.salary || 0)).toFixed(2).replace('.', ',')}</p>
+          <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-light)' }}>Taxas: R$ {(finance?.pendingBalance || 0).toFixed(2).replace('.', ',')} + Salário: R$ {(finance?.salary || 0).toFixed(2).replace('.', ',')}</p>
         </div>
         <div className="card text-center" style={{ margin: 0, padding: '16px' }}>
-          <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-light)' }}>Total Recebido</p>
-          <p style={{ margin: 0, fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--status-green)' }}>R$ {(finance?.totalReceived || 0).toFixed(2).replace('.', ',')}</p>
+          <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-light)' }}>Desempenho (Hoje)</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+             <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--status-green)' }}>{finance?.onTimeCount || 0} ✓</span>
+             <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--status-red)' }}>{finance?.delayedCount || 0} ⏳</span>
+          </div>
+          <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-light)' }}>Entregues vs Atrasadas</p>
         </div>
       </div>
 
       <h3 style={{ marginTop: '32px' }}>Histórico (Hoje)</h3>
-      {delivered.slice(0, 5).map(o => {
+      {finance?.recentHistory?.slice(0, 5).map(o => {
         const startTime = new Date(o.startedAt);
         const deliverTime = new Date(o.deliveredAt);
         const diffMinutes = Math.floor((deliverTime - startTime) / 60000);
@@ -156,17 +161,18 @@ function MotoboyDashboard() {
             <div>
               <h4 style={{ margin: '0 0 4px 0' }}>{o.customerName}</h4>
               <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-light)' }}>
-                {o.motoboyPaid ? '✓ Pago' : '⏳ Pendente'} | Taxa: R$ {(o.deliveryFee || 0).toFixed(2).replace('.', ',')}
+                {o.motoboyPaid ? '✓ Pago' : '⏳ Pendente'} | Taxa: {o.isDelayed ? <span style={{color: 'var(--status-red)', textDecoration: 'line-through'}}>R$ {(o.deliveryFee || 0).toFixed(2).replace('.', ',')}</span> : `R$ ${(o.deliveryFee || 0).toFixed(2).replace('.', ',')}`}
               </p>
             </div>
             {o.startedAt && o.deliveredAt && (
-              <span className={`badge ${diffMinutes > 20 ? 'delayed' : 'delivered'}`} style={{ fontSize: '0.9rem' }}>
-                Tempo: {diffMinutes} min
+              <span className={`badge ${o.isDelayed ? 'delayed' : 'delivered'}`} style={{ fontSize: '0.9rem' }}>
+                Tempo: {diffMinutes} min {o.isDelayed && '(Anulada)'}
               </span>
             )}
           </div>
         );
       })}
+      {(!finance?.recentHistory || finance?.recentHistory?.length === 0) && <p style={{color: 'var(--text-secondary)'}}>Nenhuma entrega no momento.</p>}
     </div>
   );
 }

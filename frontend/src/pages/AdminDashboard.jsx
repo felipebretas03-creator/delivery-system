@@ -385,12 +385,21 @@ function AdminDashboard() {
                   <h4 style={{ margin: '0 0 4px 0', color: 'var(--text-dark)' }}>{m.name}</h4>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-light)' }}>{m.pendingOrdersCount} entregas pendentes</span>
                 </div>
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--status-red)' }}>
-                    R$ {m.pendingBalance.toFixed(2).replace('.', ',')}
-                  </span>
-                  <button className="btn btn-green" style={{ width: 'auto', padding: '8px 16px' }} onClick={() => handlePayMotoboy(m.id)}>
-                    Dar Baixa (Pagar)
+                <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', display: 'block' }}>Taxas das Entregas</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--status-red)' }}>R$ {m.pendingBalance.toFixed(2).replace('.', ',')}</span>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', display: 'block' }}>Salário Fixo</span>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 'bold', color: 'var(--text-dark)' }}>R$ {(m.salary || 0).toFixed(2).replace('.', ',')}</span>
+                  </div>
+                  <div style={{ textAlign: 'right', borderLeft: '1px solid var(--border-color)', paddingLeft: '16px' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-light)', display: 'block' }}>Total Geral</span>
+                    <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>R$ {(m.pendingBalance + (m.salary || 0)).toFixed(2).replace('.', ',')}</span>
+                  </div>
+                  <button className="btn btn-green" style={{ width: 'auto', padding: '8px 16px', marginLeft: '8px' }} onClick={() => handlePayMotoboy(m.id)}>
+                    Dar Baixa de Taxas
                   </button>
                 </div>
               </li>

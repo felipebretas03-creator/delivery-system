@@ -10,12 +10,17 @@ export const getAdminFinances = async (req: AuthRequest, res: Response): Promise
         motoboyPaid: false
       },
       include: {
-        motoboy: { select: { id: true, name: true, username: true } }
+        motoboy: { select: { id: true, name: true, username: true, salary: true } }
       }
     });
 
+    const isDelayed = (o: any) => {
+      if (!o.startedAt || !o.deliveredAt) return false;
+      return Math.floor((new Date(o.deliveredAt).getTime() - new Date(o.startedAt).getTime()) / 60000) > 20;
+    };
+
     const totalSystemValue = orders.reduce((acc, o) => acc + (o.orderValue || 0), 0);
-    const totalPendingToMotoboys = orders.reduce((acc, o) => acc + (o.deliveryFee || 0), 0);
+    const totalPendingToMotoboys = orders.reduce((acc, o) => acc + (isDelayed(o) ? 0 : (o.deliveryFee || 0)), 0);
 
     const motoboyBalances: Record<number, any> = {};
     
@@ -25,11 +30,14 @@ export const getAdminFinances = async (req: AuthRequest, res: Response): Promise
           motoboyBalances[o.motoboyId] = {
             id: o.motoboyId,
             name: o.motoboy.name,
+            salary: o.motoboy.salary || 0,
             pendingBalance: 0,
             pendingOrdersCount: 0
           };
         }
-        motoboyBalances[o.motoboyId].pendingBalance += (o.deliveryFee || 0);
+        if (!isDelayed(o)) {
+          motoboyBalances[o.motoboyId].pendingBalance += (o.deliveryFee || 0);
+        }
         motoboyBalances[o.motoboyId].pendingOrdersCount += 1;
       }
     });
@@ -77,6 +85,8 @@ export const getMotoboyFinances = async (req: AuthRequest, res: Response): Promi
       return;
     }
 
+    const user = await prisma.user.findUnique({ where: { id: motoboyId }, select: { salary: true }});
+    
     const orders = await prisma.order.findMany({
       where: {
         motoboyId: motoboyId,
@@ -86,18 +96,29 @@ export const getMotoboyFinances = async (req: AuthRequest, res: Response): Promi
       take: 50 // limit history for performace reasons
     });
 
+    const isDelayed = (o: any) => {
+      if (!o.startedAt || !o.deliveredAt) return false;
+      return Math.floor((new Date(o.deliveredAt).getTime() - new Date(o.startedAt).getTime()) / 60000) > 20;
+    };
+
     const pendingBalance = orders
-      .filter(o => !o.motoboyPaid)
+      .filter(o => !o.motoboyPaid && !isDelayed(o))
       .reduce((acc, o) => acc + (o.deliveryFee || 0), 0);
       
     const totalReceived = orders
-      .filter(o => o.motoboyPaid)
+      .filter(o => o.motoboyPaid && !isDelayed(o))
       .reduce((acc, o) => acc + (o.deliveryFee || 0), 0);
+      
+    const onTimeCount = orders.filter(o => !isDelayed(o)).length;
+    const delayedCount = orders.filter(o => isDelayed(o)).length;
 
     res.json({
       pendingBalance,
       totalReceived,
-      recentHistory: orders
+      salary: user?.salary || 0,
+      onTimeCount,
+      delayedCount,
+      recentHistory: orders.map(o => ({ ...o, isDelayed: isDelayed(o) }))
     });
 
   } catch (error) {
